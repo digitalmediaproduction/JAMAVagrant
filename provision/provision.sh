@@ -146,11 +146,11 @@ if [[ $ping_result == *bytes?from* ]]; then
 		# our appended apt source.list
 
 		# Nginx.org nginx key ABF5BD827BD9BF62
-		gpg -q --keyserver hkp://keyserver.ubuntu.com:80 --recv-key ABF5BD827BD9BF62
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key ABF5BD827BD9BF62
 		gpg -q -a --export ABF5BD827BD9BF62 | apt-key add -
 
 		# Launchpad nodejs key C7917B12
-		gpg -q --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C7917B12
+		gpg -q --keyserver keyserver.ubuntu.com --recv-key C7917B12
 		gpg -q -a --export  C7917B12  | apt-key add -
 
 		# update all of the package references before installing anything
@@ -188,19 +188,20 @@ if [[ $ping_result == *bytes?from* ]]; then
 
 	# COMPOSER
 	#
-	# Install or Update Composer based on current state. Updates are direct from
-	# master branch on GitHub repository.
-	if [[ -n "$(composer --version --no-ansi | grep 'Composer version')" ]]; then
-		echo "Updating Composer..."
-		COMPOSER_HOME=/usr/local/src/composer composer self-update
-		COMPOSER_HOME=/usr/local/src/composer composer global update
-	else
+	# Install Composer if it is not yet available.
+	if [[ ! -n "$(composer --version --no-ansi | grep 'Composer version')" ]]; then
 		echo "Installing Composer..."
 		curl -sS https://getcomposer.org/installer | php
 		chmod +x composer.phar
 		mv composer.phar /usr/local/bin/composer
+	fi
 
-		COMPOSER_HOME=/usr/local/src/composer composer -q global require --no-update phpunit/phpunit:4.2.*
+	# Update both Composer and any global packages. Updates to Composer are direct from
+	# the master branch on its GitHub repository.
+	if [[ -n "$(composer --version --no-ansi | grep 'Composer version')" ]]; then
+		echo "Updating Composer..."
+		COMPOSER_HOME=/usr/local/src/composer composer self-update
+		COMPOSER_HOME=/usr/local/src/composer composer -q global require --no-update phpunit/phpunit:4.3.*
 		COMPOSER_HOME=/usr/local/src/composer composer -q global require --no-update phpunit/php-invoker:1.1.*
 		COMPOSER_HOME=/usr/local/src/composer composer -q global require --no-update mockery/mockery:0.9.*
 		COMPOSER_HOME=/usr/local/src/composer composer -q global require --no-update d11wtq/boris:v1.0.8
@@ -375,7 +376,7 @@ if [[ $ping_result == *bytes?from* ]]; then
 	# WP-CLI Install
 	if [[ ! -d /srv/www/wp-cli ]]; then
 		echo -e "\nDownloading wp-cli, see http://wp-cli.org"
-		git clone https://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
+		git clone git://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
 		cd /srv/www/wp-cli
 		composer install
 	else
@@ -416,7 +417,7 @@ if [[ $ping_result == *bytes?from* ]]; then
 	# xdebug profiler)
 	if [[ ! -d /srv/www/default/webgrind ]]; then
 		echo -e "\nDownloading webgrind, see https://github.com/jokkedk/webgrind"
-		git clone https://github.com/jokkedk/webgrind.git /srv/www/default/webgrind
+		git clone git://github.com/jokkedk/webgrind.git /srv/www/default/webgrind
 	else
 		echo -e "\nUpdating webgrind..."
 		cd /srv/www/default/webgrind
@@ -426,7 +427,7 @@ if [[ $ping_result == *bytes?from* ]]; then
 	# PHP_CodeSniffer (for running WordPress-Coding-Standards)
 	if [[ ! -d /srv/www/phpcs ]]; then
 		echo -e "\nDownloading PHP_CodeSniffer (phpcs), see https://github.com/squizlabs/PHP_CodeSniffer"
-		git clone https://github.com/squizlabs/PHP_CodeSniffer.git /srv/www/phpcs
+		git clone git://github.com/squizlabs/PHP_CodeSniffer.git /srv/www/phpcs
 	else
 		cd /srv/www/phpcs
 		if [[ $(git rev-parse --abbrev-ref HEAD) == 'master' ]]; then
@@ -440,7 +441,7 @@ if [[ $ping_result == *bytes?from* ]]; then
 	# Sniffs WordPress Coding Standards
 	if [[ ! -d /srv/www/phpcs/CodeSniffer/Standards/WordPress ]]; then
 		echo -e "\nDownloading WordPress-Coding-Standards, sniffs for PHP_CodeSniffer, see https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards"
-		git clone https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git /srv/www/phpcs/CodeSniffer/Standards/WordPress
+		git clone git://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git /srv/www/phpcs/CodeSniffer/Standards/WordPress
 	else
 		cd /srv/www/phpcs/CodeSniffer/Standards/WordPress
 		if [[ $(git rev-parse --abbrev-ref HEAD) == 'master' ]]; then
@@ -525,7 +526,7 @@ PHP
 			svn up
 		else
 			if [[ $(git rev-parse --abbrev-ref HEAD) == 'master' ]]; then
-				git pull --no-edit https://develop.git.wordpress.org/ master
+				git pull --no-edit git://develop.git.wordpress.org/ master
 			else
 				echo "Skip auto git pull on develop.git.wordpress.org since not on master branch"
 			fi
