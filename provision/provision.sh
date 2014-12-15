@@ -82,6 +82,9 @@ apt_package_check_list=(
 	colordiff
 	postfix
 
+	# ntp service to keep clock current
+	ntp
+
 	# Req'd for i18n tools
 	gettext
 
@@ -261,7 +264,7 @@ echo -e "\nSetup configuration files..."
 # Used to to ensure proper services are started on `vagrant up`
 cp /srv/config/init/vvv-start.conf /etc/init/vvv-start.conf
 
-echo " * /srv/config/init/vvv-start.conf               -> /etc/init/vvv-start.conf"
+echo " * Copied /srv/config/init/vvv-start.conf               to /etc/init/vvv-start.conf"
 
 # Copy nginx configuration from local
 cp /srv/config/nginx-config/nginx.conf /etc/nginx/nginx.conf
@@ -271,9 +274,9 @@ if [[ ! -d /etc/nginx/custom-sites ]]; then
 fi
 rsync -rvzh --delete /srv/config/nginx-config/sites/ /etc/nginx/custom-sites/
 
-echo " * /srv/config/nginx-config/nginx.conf           -> /etc/nginx/nginx.conf"
-echo " * /srv/config/nginx-config/nginx-wp-common.conf -> /etc/nginx/nginx-wp-common.conf"
-echo " * /srv/config/nginx-config/sites/               -> /etc/nginx/custom-sites"
+echo " * Copied /srv/config/nginx-config/nginx.conf           to /etc/nginx/nginx.conf"
+echo " * Copied /srv/config/nginx-config/nginx-wp-common.conf to /etc/nginx/nginx-wp-common.conf"
+echo " * Rsync'd /srv/config/nginx-config/sites/              to /etc/nginx/custom-sites"
 
 # Copy php-fpm configuration from local
 cp /srv/config/php5-fpm-config/php5-fpm.conf /etc/php5/fpm/php5-fpm.conf
@@ -286,16 +289,16 @@ cp /srv/config/php5-fpm-config/xdebug.ini /etc/php5/mods-available/xdebug.ini
 XDEBUG_PATH=$( find /usr -name 'xdebug.so' | head -1 )
 sed -i "1izend_extension=\"$XDEBUG_PATH\"" /etc/php5/mods-available/xdebug.ini
 
-echo " * /srv/config/php5-fpm-config/php5-fpm.conf     -> /etc/php5/fpm/php5-fpm.conf"
-echo " * /srv/config/php5-fpm-config/www.conf          -> /etc/php5/fpm/pool.d/www.conf"
-echo " * /srv/config/php5-fpm-config/php-custom.ini    -> /etc/php5/fpm/conf.d/php-custom.ini"
-echo " * /srv/config/php5-fpm-config/opcache.ini       -> /etc/php5/fpm/conf.d/opcache.ini"
-echo " * /srv/config/php5-fpm-config/xdebug.ini        -> /etc/php5/mods-available/xdebug.ini"
+echo " * Copied /srv/config/php5-fpm-config/php5-fpm.conf     to /etc/php5/fpm/php5-fpm.conf"
+echo " * Copied /srv/config/php5-fpm-config/www.conf          to /etc/php5/fpm/pool.d/www.conf"
+echo " * Copied /srv/config/php5-fpm-config/php-custom.ini    to /etc/php5/fpm/conf.d/php-custom.ini"
+echo " * Copied /srv/config/php5-fpm-config/opcache.ini       to /etc/php5/fpm/conf.d/opcache.ini"
+echo " * Copied /srv/config/php5-fpm-config/xdebug.ini        to /etc/php5/mods-available/xdebug.ini"
 
 # Copy memcached configuration from local
 cp /srv/config/memcached-config/memcached.conf /etc/memcached.conf
 
-echo " * /srv/config/memcached-config/memcached.conf   -> /etc/memcached.conf"
+echo " * Copied /srv/config/memcached-config/memcached.conf   to /etc/memcached.conf"
 
 # Copy custom dotfiles and bin file for the vagrant user from local
 cp /srv/config/bash_profile /home/vagrant/.bash_profile
@@ -310,16 +313,16 @@ if [[ ! -d /home/vagrant/bin ]]; then
 fi
 rsync -rvzh --delete /srv/config/homebin/ /home/vagrant/bin/
 
-echo " * /srv/config/bash_profile                      -> /home/vagrant/.bash_profile"
-echo " * /srv/config/bash_aliases                      -> /home/vagrant/.bash_aliases"
-echo " * /srv/config/vimrc                             -> /home/vagrant/.vimrc"
-echo " * /srv/config/subversion-servers                -> /home/vagrant/.subversion/servers"
-echo " * /srv/config/homebin                           -> /home/vagrant/bin"
+echo " * Copied /srv/config/bash_profile                      to /home/vagrant/.bash_profile"
+echo " * Copied /srv/config/bash_aliases                      to /home/vagrant/.bash_aliases"
+echo " * Copied /srv/config/vimrc                             to /home/vagrant/.vimrc"
+echo " * Copied /srv/config/subversion-servers                to /home/vagrant/.subversion/servers"
+echo " * rsync'd /srv/config/homebin                          to /home/vagrant/bin"
 
 # If a bash_prompt file exists in the VVV config/ directory, copy to the VM.
 if [[ -f /srv/config/bash_prompt ]]; then
 	cp /srv/config/bash_prompt /home/vagrant/.bash_prompt
-	echo " * /srv/config/bash_prompt                       -> /home/vagrant/.bash_prompt"
+	echo " * Copied /srv/config/bash_prompt                       to /home/vagrant/.bash_prompt"
 fi
 
 # RESTART SERVICES
@@ -331,6 +334,10 @@ service memcached restart
 
 # Disable PHP Xdebug module by default
 php5dismod xdebug
+
+# Enable PHP mcrypt module by default
+php5enmod mcrypt
+
 service php5-fpm restart
 
 # If MySQL is installed, go through the various imports and service tasks.
@@ -342,8 +349,8 @@ if [[ "mysql: unrecognized service" != "${exists_mysql}" ]]; then
 	cp /srv/config/mysql-config/my.cnf /etc/mysql/my.cnf
 	cp /srv/config/mysql-config/root-my.cnf /home/vagrant/.my.cnf
 
-	echo " * /srv/config/mysql-config/my.cnf               -> /etc/mysql/my.cnf"
-	echo " * /srv/config/mysql-config/root-my.cnf          -> /home/vagrant/.my.cnf"
+	echo " * Copied /srv/config/mysql-config/my.cnf               to /etc/mysql/my.cnf"
+	echo " * Copied /srv/config/mysql-config/root-my.cnf          to /home/vagrant/.my.cnf"
 
 	# MySQL gives us an error if we restart a non running service, which
 	# happens after a `vagrant halt`. Check to see if it's running before
@@ -388,7 +395,7 @@ if [[ $ping_result == "Connected" ]]; then
 	# WP-CLI Install
 	if [[ ! -d /srv/www/wp-cli ]]; then
 		echo -e "\nDownloading wp-cli, see http://wp-cli.org"
-		git clone git://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
+		git clone https://github.com/wp-cli/wp-cli.git /srv/www/wp-cli
 		cd /srv/www/wp-cli
 		composer install
 	else
@@ -429,7 +436,7 @@ if [[ $ping_result == "Connected" ]]; then
 	# xdebug profiler)
 	if [[ ! -d /srv/www/default/webgrind ]]; then
 		echo -e "\nDownloading webgrind, see https://github.com/jokkedk/webgrind"
-		git clone git://github.com/jokkedk/webgrind.git /srv/www/default/webgrind
+		git clone https://github.com/jokkedk/webgrind.git /srv/www/default/webgrind
 	else
 		echo -e "\nUpdating webgrind..."
 		cd /srv/www/default/webgrind
@@ -439,7 +446,7 @@ if [[ $ping_result == "Connected" ]]; then
 	# PHP_CodeSniffer (for running WordPress-Coding-Standards)
 	if [[ ! -d /srv/www/phpcs ]]; then
 		echo -e "\nDownloading PHP_CodeSniffer (phpcs), see https://github.com/squizlabs/PHP_CodeSniffer"
-		git clone git://github.com/squizlabs/PHP_CodeSniffer.git /srv/www/phpcs
+		git clone -b master https://github.com/squizlabs/PHP_CodeSniffer.git /srv/www/phpcs
 	else
 		cd /srv/www/phpcs
 		if [[ $(git rev-parse --abbrev-ref HEAD) == 'master' ]]; then
@@ -453,7 +460,7 @@ if [[ $ping_result == "Connected" ]]; then
 	# Sniffs WordPress Coding Standards
 	if [[ ! -d /srv/www/phpcs/CodeSniffer/Standards/WordPress ]]; then
 		echo -e "\nDownloading WordPress-Coding-Standards, sniffs for PHP_CodeSniffer, see https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards"
-		git clone git://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git /srv/www/phpcs/CodeSniffer/Standards/WordPress
+		git clone -b master https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git /srv/www/phpcs/CodeSniffer/Standards/WordPress
 	else
 		cd /srv/www/phpcs/CodeSniffer/Standards/WordPress
 		if [[ $(git rev-parse --abbrev-ref HEAD) == 'master' ]]; then
@@ -499,8 +506,8 @@ PHP
 
 	# Checkout, install and configure WordPress trunk via core.svn
 	if [[ ! -d /srv/www/wordpress-trunk ]]; then
-		echo "Checking out WordPress trunk from core.svn, see http://core.svn.wordpress.org/trunk"
-		svn checkout http://core.svn.wordpress.org/trunk/ /srv/www/wordpress-trunk
+		echo "Checking out WordPress trunk from core.svn, see https://core.svn.wordpress.org/trunk"
+		svn checkout https://core.svn.wordpress.org/trunk/ /srv/www/wordpress-trunk
 		cd /srv/www/wordpress-trunk
 		echo "Configuring WordPress trunk..."
 		wp core config --dbname=wordpress_trunk --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
@@ -516,8 +523,8 @@ PHP
 
 	# Checkout, install and configure WordPress trunk via develop.svn
 	if [[ ! -d /srv/www/wordpress-develop ]]; then
-		echo "Checking out WordPress trunk from develop.svn, see http://develop.svn.wordpress.org/trunk"
-		svn checkout http://develop.svn.wordpress.org/trunk/ /srv/www/wordpress-develop
+		echo "Checking out WordPress trunk from develop.svn, see https://develop.svn.wordpress.org/trunk"
+		svn checkout https://develop.svn.wordpress.org/trunk/ /srv/www/wordpress-develop
 		cd /srv/www/wordpress-develop/src/
 		echo "Configuring WordPress develop..."
 		wp core config --dbname=wordpress_develop --dbuser=wp --dbpass=wp --quiet --extra-php <<PHP
@@ -559,11 +566,11 @@ PHP
 
 	# Download phpMyAdmin
 	if [[ ! -d /srv/www/default/database-admin ]]; then
-		echo "Downloading phpMyAdmin 4.2.11..."
+		echo "Downloading phpMyAdmin 4.2.13.1..."
 		cd /srv/www/default
-		wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.2.11/phpMyAdmin-4.2.11-all-languages.tar.gz/download'
+		wget -q -O phpmyadmin.tar.gz 'http://sourceforge.net/projects/phpmyadmin/files/phpMyAdmin/4.2.13.1/phpMyAdmin-4.2.13.1-all-languages.tar.gz/download'
 		tar -xf phpmyadmin.tar.gz
-		mv phpMyAdmin-4.2.11-all-languages database-admin
+		mv phpMyAdmin-4.2.13.1-all-languages database-admin
 		rm phpmyadmin.tar.gz
 	else
 		echo "PHPMyAdmin already installed."
